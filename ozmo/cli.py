@@ -8,7 +8,7 @@ import re
 import click
 from pycountry_convert import country_alpha2_to_continent_code
 
-from sucks import *
+from ozmo import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,9 +84,9 @@ class CliAction:
 
 def config_file():
     if platform.system() == 'Windows':
-        return os.path.join(os.getenv('APPDATA'), 'sucks.conf')
+        return os.path.join(os.getenv('APPDATA'), 'ozmo.conf')
     else:
-        return os.path.expanduser('~/.config/sucks.conf')
+        return os.path.expanduser('~/.config/ozmo.conf')
 
 
 def config_file_exists():

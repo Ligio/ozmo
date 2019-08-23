@@ -2,7 +2,7 @@ from re import search
 
 from nose.tools import *
 
-from sucks import *
+from ozmo import *
 
 
 # There are few tests for the XMPP stuff here because it's relatively complicated to test given

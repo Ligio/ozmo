@@ -4,7 +4,7 @@ For a description of the Ecovacs API protocols, see
 [the protocol documentation](protocol.md)
 
 
-## Getting started with Sucks
+## Getting started with Ozmo
 
 If you'd like to join in on developing, I recommend checking out the code,
 [setting up a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtualenv/),

@@ -5,7 +5,7 @@ from nose.tools import *
 import requests_mock
 import requests
 
-from sucks import *
+from ozmo import *
 import paho.mqtt
 
 # There are few tests for the MQTT stuff here because it's relatively complicated to test given

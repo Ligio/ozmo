@@ -3,7 +3,7 @@ from re import compile
 import requests_mock
 from nose.tools import *
 
-from sucks import *
+from ozmo import *
 
 
 def test_md5():

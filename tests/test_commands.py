@@ -2,7 +2,7 @@ from xml.etree import ElementTree
 
 from nose.tools import *
 
-from sucks import *
+from ozmo import *
 
 
 def test_custom_command():

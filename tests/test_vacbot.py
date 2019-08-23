@@ -1,6 +1,6 @@
 from nose.tools import *
 
-from sucks import *
+from ozmo import *
 from unittest.mock import Mock, patch
 from sleekxmppfs.exceptions import XMPPError
 from paho.mqtt.client import MQTT_ERR_UNKNOWN as MQTTError
@@ -24,9 +24,9 @@ def test_handle_clean_report():
     assert_equals('edge', v.clean_status)
     assert_is_none(v.fan_speed)
 
-    # For states not handled by sucks constants, fall back to just using whatever the vacuum said
-    v._handle_ctl({'event': 'clean_report', 'type': 'a_type_not_supported_by_sucks', 'speed': 'a_weird_speed'})
-    assert_equals('a_type_not_supported_by_sucks', v.clean_status)
+    # For states not handled by ozmo constants, fall back to just using whatever the vacuum said
+    v._handle_ctl({'event': 'clean_report', 'type': 'a_type_not_supported_by_ozmo', 'speed': 'a_weird_speed'})
+    assert_equals('a_type_not_supported_by_ozmo', v.clean_status)
     assert_equals('a_weird_speed', v.fan_speed)
 
 
@@ -72,8 +72,8 @@ def test_handle_charge_state():
     v._handle_ctl({'event': 'charge_state', 'ret': 'fail', 'errno': '3'}) #Seen in IOT - could be "Bot in stuck state, example dust bin out"
     assert_equals('idle', v.charge_status)
 
-    v._handle_ctl({'event': 'charge_state', 'type': 'a_type_not_supported_by_sucks'})
-    assert_equals('a_type_not_supported_by_sucks', v.charge_status)
+    v._handle_ctl({'event': 'charge_state', 'type': 'a_type_not_supported_by_ozmo'})
+    assert_equals('a_type_not_supported_by_ozmo', v.charge_status)
 
 
 def test_vacuum_states():

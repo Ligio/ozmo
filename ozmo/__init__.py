@@ -53,7 +53,7 @@ VACUUM_STATUS_OFFLINE = 'offline'
 CLEANING_STATES = {CLEAN_MODE_AUTO, CLEAN_MODE_EDGE, CLEAN_MODE_SPOT, CLEAN_MODE_SPOT_AREA, CLEAN_MODE_SINGLE_ROOM}
 CHARGING_STATES = {CHARGE_MODE_CHARGING}
 
-# These dictionaries convert to and from Sucks's consts (which closely match what the UI and manuals use)
+# These dictionaries convert to and from Ozmo's consts (which closely match what the UI and manuals use)
 # to and from what the Ecovacs API uses (which are sometimes very oddly named and have random capitalization.)
 CLEAN_MODE_TO_ECOVACS = {
     CLEAN_MODE_AUTO: 'auto',
@@ -393,7 +393,7 @@ class VacBot():
         self.charge_status = None
         self.battery_status = None
 
-        # This is an aggregate state managed by the sucks library, combining the clean and charge events to a single state
+        # This is an aggregate state managed by the ozmo library, combining the clean and charge events to a single state
         self.vacuum_status = None
         self.fan_speed = None
 
@@ -801,7 +801,7 @@ class EcoVacsIOTMQ(ClientMQTT):
         if len(xmlchild) > 0:
             result = xmlchild[0].attrib.copy()
             #Fix for difference in XMPP vs API response
-            #Depending on the report will use the tag and add "report" to fit the mold of sucks library
+            #Depending on the report will use the tag and add "report" to fit the mold of ozmo library
             if xmlchild[0].tag == "clean":
                 result['event'] = "CleanReport"
             elif xmlchild[0].tag == "charge":

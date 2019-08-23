@@ -364,12 +364,12 @@ For the Library - you could use `vacbot.run(SpotArea('start', '0,1'))`
 
 "0,1" is a list of mapIDs the bot should clean. Each of these corresponds to a room or area the bot mapped. In the app, these are what show the letters over rooms mapID (0) == room ("A"), (1) == "B", etc.
 
-If you want to see your MapSet areas, you can use the library. Set --debug for sucks and then use a custom command:
+If you want to see your MapSet areas, you can use the library. Set --debug for ozmo and then use a custom command:
 `vacbot.run(VacBotCommand("GetMapSet", {"tp":"sa"}))`
 
 You'll see in DEBUG something like:
 ```
-sucks DEBUG got {'id': 'ralnsy', 'ret': 'ok', 'resp': "<ctl ret='ok' tp='sa' msid='11'><m mid='0' p='1'/><m mid='1' p='1'/><m mid='2' p='1'/><m mid='3' p='1'/><m mid='4' p='1'/><m mid='5' p='1'/><m mid='6' p='1'/><m mid='7' p='1'/><m mid='8' p='1'/></ctl>"}
+ozmo DEBUG got {'id': 'ralnsy', 'ret': 'ok', 'resp': "<ctl ret='ok' tp='sa' msid='11'><m mid='0' p='1'/><m mid='1' p='1'/><m mid='2' p='1'/><m mid='3' p='1'/><m mid='4' p='1'/><m mid='5' p='1'/><m mid='6' p='1'/><m mid='7' p='1'/><m mid='8' p='1'/></ctl>"}
 ```
 This tells you I have 9 rooms mapped (mid= 0 - 8) or A-I, but you should be able to compare to the map in the app now to know which mid == what room.
 

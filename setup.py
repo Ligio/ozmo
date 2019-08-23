@@ -14,17 +14,17 @@ except FileNotFoundError:
     print("can't find python README; skipping")
 
 setup(
-    name='sucks',
-    version='0.9.3',
+    name='ozmo',
+    version='1.0',
 
     description='a library for controlling certain robot vacuums',
     long_description=long_description,
 
-    url='https://github.com/wpietri/sucks',
+    url='https://github.com/ligio/ozmo',
 
     # Author details
-    author='William Pietri',
-    author_email='sucks-users@googlegroups.com',
+    author='Marco',
+    author_email='ligioxx@gmail.com',
 
     # Choose your license
     license='GPL-3.0',
@@ -95,7 +95,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'sucks=sucks.cli:cli',
+            'ozmo=ozmo.cli:cli',
         ],
     },
 )

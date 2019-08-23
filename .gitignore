@@ -13,7 +13,7 @@ cover/
 # Ignore Vscode files
 .vscode/
 
-# Ignore sucks.egg-info
-sucks.egg-info/
+# Ignore ozmo.egg-info
+ozmo.egg-info/
 .noseids
 nosetests.xml

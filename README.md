@@ -1,8 +1,8 @@
-Linux: [![Build Status](https://travis-ci.org/wpietri/sucks.svg?branch=master)](https://travis-ci.org/wpietri/sucks)
-Windows: [![Build Status](https://ci.appveyor.com/api/projects/status/github/wpietri/sucks)](https://ci.appveyor.com/project/wpietri/sucks)
+Linux: [![Build Status](https://travis-ci.org/wpietri/ozmo.svg?branch=master)](https://travis-ci.org/wpietri/ozmo)
+Windows: [![Build Status](https://ci.appveyor.com/api/projects/status/github/wpietri/ozmo)](https://ci.appveyor.com/project/wpietri/ozmo)
 
 
-sucks
+ozmo
 =====
 
 A simple command-line python script to drive a robot vacuum. Currently
@@ -10,10 +10,10 @@ known to work with the Ecovacs Deebot N79, M80 Pro, M81, M88
 Pro, and R95 MKII from both North America and Europe.
 
 Does it work for your model as well? Join the discussion on the
-[sucks-users mailing
-list](https://groups.google.com/forum/#!forum/sucks-users).
+[ozmo-users mailing
+list](https://groups.google.com/forum/#!forum/ozmo-users).
 
-If you're curious about the protocol, I have [a rough doc](http://github.com/wpietri/sucks/blob/master/protocol.md)
+If you're curious about the protocol, I have [a rough doc](http://github.com/wpietri/ozmo/blob/master/protocol.md)
 started. I'll happily accept pull requests for it.
 
 Why the project name? Well, a) it's ridiculous that I needed to MITM
@@ -23,7 +23,7 @@ it's a vacuum.
 ## Installation
 
 If you have a recent version of Python 3, you should be able to
-do `pip install sucks` to get the most recently released version of
+do `pip install ozmo` to get the most recently released version of
 this.
 
 ## Usage
@@ -33,7 +33,7 @@ using your smartphone.
 
 With that ready, step one is to log in:
 ```
-    % sucks login
+    % ozmo login
     Ecovacs app email: [your email]
     Ecovacs app password: [your password]
     your two-letter country code: us
@@ -49,32 +49,32 @@ With that set up, you could have it clean in auto mode for 10 minutes
 and return to its charger:
 
 ```
-    % sucks clean 10
+    % ozmo clean 10
 ```
 
 You could have it clean for 15 minutes and then do an extra 10 minutes
 of edging:
 
 ```
-    % sucks clean 15 edge 10
+    % ozmo clean 15 edge 10
 ```
 
 If you wanted it to clean for 5 minutes and then stop without charging:
 
 ```
-    % sucks clean 5 stop
+    % ozmo clean 5 stop
 ```
 
 If it's running amok and you'd just like it to stop where it is:
 
 ```
-    % sucks stop
+    % ozmo stop
 ```
 
 To tell it to go plug in:
 
 ```
-    % sucks charge
+    % ozmo charge
 ```
 
 I run mine from my crontab, but I didn't want it to clean every day,
@@ -82,7 +82,7 @@ so it also has a mode where it randomly decides to run or not based on
 a frequency you give it. My crontab entry looks like this:
 
 ```
-0 10 * * * /home/william/projects/sucks/sucks.sh clean -f 4/7 15 edge -f 1/14 10
+0 10 * * * /home/william/projects/ozmo/ozmo.sh clean -f 4/7 15 edge -f 1/14 10
 ```
 
 This means that every day at 10 am, it might do something. 4 days out
@@ -94,13 +94,13 @@ charge.
 
 You are welcome to try using this as a python library for other efforts. The
 API is still experimental, so expect changes. Please join the [mailing
-list](https://groups.google.com/forum/#!forum/sucks-users) to participate in
+list](https://groups.google.com/forum/#!forum/ozmo-users) to participate in
 shaping the API.
 
 A simple usage might go something like this:
 
 ```python
-from sucks import *
+from ozmo import *
 
 config = ...
 
@@ -120,7 +120,7 @@ vacbot.run(Charge()) # return to the charger
 If you'd like to join in on developing, I recommend checking out the code,
 setting up a virtual environment, and installing this package in editable
 mode. You can confirm your environment works by running the tests. And please
-do join the [mailing list](https://groups.google.com/forum/#!forum/sucks-users)
+do join the [mailing list](https://groups.google.com/forum/#!forum/ozmo-users)
 to discuss your plans.
 
 For more information see [the development documentation](developing.md).
@@ -129,7 +129,7 @@ For more information see [the development documentation](developing.md).
 
 ## See also
 
-There are now similar libraries in [Javascript](https://github.com/joostth/sucks.js)
+There are now similar libraries in [Javascript](https://github.com/joostth/ozmo.js)
 and [Go](https://github.com/skburgart/go-vacbot).
 
 ## Thanks
