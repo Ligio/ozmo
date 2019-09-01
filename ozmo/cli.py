@@ -80,26 +80,6 @@ class StatusWait(BotWait):
             time.sleep(0.5)
         _LOGGER.debug("wait complete; " + self.wait_on + " is now " + self.wait_for)
 
-class NotNullWait(BotWait):
-    def __init__(self, wait_on):
-        super().__init__()
-        self.wait_on = wait_on
-
-    def wait(self, bot):
-        if not hasattr(bot, self.wait_on):
-            raise ValueError("object " + bot + " does not have method " + self.wait_on)
-        _LOGGER.debug("waiting on " + self.wait_on + " for value not Null")
-
-        i = 20
-        while getattr(bot, self.wait_on) == None or i >= 0:
-            time.sleep(0.5)
-            i = i - 1
-
-        if (i < 0):
-            _LOGGER.error("Timeout waiting on " + self.wait_on + " for value not Null")
-        else:
-            _LOGGER.debug("wait complete; " + self.wait_on + " is now not Null")
-
 class CliAction:
     def __init__(self, vac_command, terminal=False, wait=None):
         self.vac_command = vac_command

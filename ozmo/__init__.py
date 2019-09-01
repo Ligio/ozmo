@@ -562,7 +562,6 @@ class VacBot():
     def _handle_charger_pos(self, event):
         if 'p' in event and 'a' in event:
             _LOGGER.debug("Handle charger position")
-            _LOGGER.debug(event)
 
             self.charger_pos = {
                 'p': event['p'],
@@ -570,8 +569,10 @@ class VacBot():
             }
 
     def _handle_clean_logs(self, event):
-        self.clean_logs = event['data']['logs']
-        _LOGGER.debug(self.clean_logs)
+        if 'data' in event and 'logs' in event['data']:
+            _LOGGER.debug("Handle clean logs")
+
+            self.clean_logs = event['data']['logs']
 
     def _vacuum_address(self):
         if not self.vacuum['iotmq']:
@@ -655,8 +656,6 @@ class VacBot():
             self.iotmq.send_command(action, self._vacuum_address())  #IOTMQ devices need the full action for additional parsing
 
     def run(self, action):
-        _LOGGER.debug("ACTION: ")
-        _LOGGER.debug(vars(action))
         self.send_command(action)
 
     def disconnect(self, wait=False):
