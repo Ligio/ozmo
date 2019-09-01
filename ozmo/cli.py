@@ -42,6 +42,12 @@ class FrequencyParamType(click.ParamType):
 FREQUENCY = FrequencyParamType()
 
 
+class EmptyWait():
+    pass
+
+    def wait(self, bot):
+        pass
+
 class BotWait():
     pass
 
@@ -73,7 +79,6 @@ class StatusWait(BotWait):
         while getattr(bot, self.wait_on) != self.wait_for:
             time.sleep(0.5)
         _LOGGER.debug("wait complete; " + self.wait_on + " is now " + self.wait_for)
-
 
 class CliAction:
     def __init__(self, vac_command, terminal=False, wait=None):
@@ -176,6 +181,13 @@ def clean(frequency, minutes):
     if should_run(frequency):
         return CliAction(Clean(), wait=waiter)
 
+@cli.command(help='pause bot cleaning task')
+def pause():
+    return CliAction(Clean(action='pause'), wait=EmptyWait())
+
+@cli.command(help='resume bot cleaning task')
+def resume():
+    return CliAction(Clean(action='resume'), wait=EmptyWait())
 
 @cli.command(help='cleans room edges for the specified number of minutes')
 @click.option('--frequency', '-f', type=FREQUENCY, help='frequency with which to run; e.g. 0.5 or 3/7')
@@ -208,6 +220,23 @@ def charge_action():
 def stop():
     return CliAction(Stop(), terminal=True, wait=StatusWait('clean_status', 'stop'))
 
+@cli.command(help='set fun speed')
+@click.argument('speed', type=click.STRING, required=True)
+def set_speed(speed):
+    return CliAction(SetCleanSpeed(speed), terminal=True, wait=EmptyWait())
+
+@cli.command(help='set water level')
+@click.argument('level', type=click.STRING, required=True)
+def set_water_level(level):
+    return CliAction(SetWaterLevel(level), terminal=True, wait=EmptyWait())
+
+@cli.command(help='get charger position')
+def get_charger_position():
+    return CliAction(GetChargerPos(), terminal=True, wait=EmptyWait())
+
+@cli.command(help='get clean logs')
+def get_clean_logs():
+    return CliAction(GetCleanLogs(), terminal=True, wait=EmptyWait())
 
 @cli.resultcallback()
 def run(actions, debug):
