@@ -11,6 +11,7 @@ import ssl
 import requests
 import stringcase
 import os
+import re
 from sleekxmppfs import ClientXMPP, Callback, MatchXPath
 from sleekxmppfs.xmlstream import ET
 from sleekxmppfs.exceptions import XMPPError
@@ -93,6 +94,12 @@ FAN_SPEED_TO_ECOVACS = {
     FAN_SPEED_HIGH: 'strong'
 }
 
+WATER_LEVEL_TO_ECOVACS = {
+    'low': '1',
+    'medium': '2',
+    'high': '3'
+}
+
 FAN_SPEED_FROM_ECOVACS = {
     'standard': FAN_SPEED_NORMAL,
     'strong': FAN_SPEED_HIGH
@@ -123,6 +130,15 @@ COMPONENT_FROM_ECOVACS = {
     'dust_case_heap': COMPONENT_FILTER
 }
 
+def ecovacs_fan_speed(speed):
+    if speed == FAN_SPEED_NORMAL or speed == FAN_SPEED_TO_ECOVACS[FAN_SPEED_NORMAL]:
+        return FAN_SPEED_TO_ECOVACS[FAN_SPEED_NORMAL]
+    elif speed == FAN_SPEED_HIGH or speed == FAN_SPEED_TO_ECOVACS[FAN_SPEED_HIGH]:
+        return FAN_SPEED_TO_ECOVACS[FAN_SPEED_HIGH]
+    else:
+        raise ValueError("Fan speed not found - {}".format(speed))
+
+
 def str_to_bool_or_cert(s):
     if s == 'True' or s == True:
         return True
@@ -149,6 +165,7 @@ class EcoVacsAPI:
 
     USERSAPI = 'users/user.do'
     IOTDEVMANAGERAPI = 'iot/devmanager.do' # IOT Device Manager - This provides control of "IOT" products via RestAPI, some bots use this instead of XMPP
+    LGLOGAPI = 'lg/log.do' # IOT Device Manager - This provides control of "IOT" products via RestAPI, some bots use this instead of XMPP
     PRODUCTAPI = 'pim/product' # Leaving this open, the only endpoint known currently is "Product IOT Map" -  pim/product/getProductIotMap - This provides a list of "IOT" products.  Not sure what this provides the app.
         
       
@@ -393,6 +410,10 @@ class VacBot():
         self.charge_status = None
         self.battery_status = None
 
+        # vacuum map info
+        self.charger_pos = None
+        self.clean_logs = None
+
         # This is an aggregate state managed by the ozmo library, combining the clean and charge events to a single state
         self.vacuum_status = None
         self.fan_speed = None
@@ -413,10 +434,10 @@ class VacBot():
             self.xmpp = EcoVacsXMPP(user, domain, resource, secret, continent, vacuum, server_address)
             #Uncomment line to allow unencrypted plain auth
             #self.xmpp['feature_mechanisms'].unencrypted_plain = True
-            self.xmpp.subscribe_to_ctls(self._handle_ctl)            
-        
-        else:            
-            self.iotmq = EcoVacsIOTMQ(user, domain, resource, secret, continent, vacuum, server_address, verify_ssl=verify_ssl)            
+            self.xmpp.subscribe_to_ctls(self._handle_ctl)
+
+        else:
+            self.iotmq = EcoVacsIOTMQ(user, domain, resource, secret, continent, vacuum, server_address, verify_ssl=verify_ssl)
             self.iotmq.subscribe_to_ctls(self._handle_ctl)
             #The app still connects to XMPP as well, but only issues ping commands.
             #Everything works without XMPP, so leaving the below commented out.
@@ -437,7 +458,7 @@ class VacBot():
         if self._monitor:
             # Do a first ping, which will also fetch initial statuses if the ping succeeds
             self.send_ping()
-            if not self.vacuum['iotmq']:            
+            if not self.vacuum['iotmq']:
                 self.xmpp.schedule('Components', 3600, lambda: self.refresh_components(), repeat=True)
             else:
                 self.iotmq.schedule(3600,self.refresh_components)
@@ -469,7 +490,7 @@ class VacBot():
         else:
             lifespan = int(event['left']) / 60  #This works for a D901
         self.components[type] = lifespan
-        
+
         lifespan_event = {'type': type, 'lifespan': lifespan}
         self.lifespanEvents.notify(lifespan_event)
         _LOGGER.debug("*** life_span " + type + " = " + str(lifespan))
@@ -486,8 +507,8 @@ class VacBot():
         except KeyError:
             _LOGGER.warning("Unknown cleaning status '" + type + "'")
         self.clean_status = type
-        self.vacuum_status = type        
-        
+        self.vacuum_status = type
+
         fan = event.get('speed', None)
         if fan is not None:
             try:
@@ -520,10 +541,10 @@ class VacBot():
                 status = 'idle'
             elif event['ret'] == 'fail' and event['errno'] == '3': #Bot in stuck state, example dust bin out
                 status = 'idle'
-            else: 
+            else:
                 status = 'idle' #Fall back to Idle status
                 _LOGGER.error("Unknown charging status '" + event['errno'] + "'") #Log this so we can identify more errors    
-        
+
         try:
             status = CHARGE_MODE_FROM_ECOVACS[status]
         except KeyError:
@@ -538,9 +559,23 @@ class VacBot():
             self.statusEvents.notify(self.vacuum_status)
         _LOGGER.debug("*** charge_status = " + self.charge_status)
 
+    def _handle_charger_pos(self, event):
+        if 'p' in event and 'a' in event:
+            _LOGGER.debug("Handle charger position")
+            _LOGGER.debug(event)
+
+            self.charger_pos = {
+                'p': event['p'],
+                'a': event['a']
+            }
+
+    def _handle_clean_logs(self, event):
+        self.clean_logs = event['data']['logs']
+        _LOGGER.debug(self.clean_logs)
+
     def _vacuum_address(self):
         if not self.vacuum['iotmq']:
-            return self.vacuum['did'] + '@' + self.vacuum['class'] + '.ecorobot.net/atom'            
+            return self.vacuum['did'] + '@' + self.vacuum['class'] + '.ecorobot.net/atom'
         else:
             return self.vacuum['did'] #IOTMQ only uses the did
 
@@ -555,11 +590,11 @@ class VacBot():
     def send_ping(self):
         try:
             if not self.vacuum['iotmq']:
-                self.xmpp.send_ping(self._vacuum_address()) 
-            elif self.vacuum['iotmq']: 
-                if not self.iotmq.send_ping():   
-                    raise RuntimeError()                
-           
+                self.xmpp.send_ping(self._vacuum_address())
+            elif self.vacuum['iotmq']:
+                if not self.iotmq.send_ping():
+                    raise RuntimeError()
+
         except XMPPError as err:
             _LOGGER.warning("Ping did not reach VacBot. Will retry.")
             _LOGGER.debug("*** Error type: " + err.etype)
@@ -574,8 +609,8 @@ class VacBot():
             self._failed_pings += 1
             if self._failed_pings >= 4:
                 self.vacuum_status = 'offline'
-                self.statusEvents.notify(self.vacuum_status)  
-          
+                self.statusEvents.notify(self.vacuum_status)
+
         else:
             self._failed_pings = 0
             if self._monitor:
@@ -614,15 +649,17 @@ class VacBot():
 
     def send_command(self, action):
         if not self.vacuum['iotmq']:
-            self.xmpp.send_command(action.to_xml(), self._vacuum_address()) 
-        else:   
+            self.xmpp.send_command(action.to_xml(), self._vacuum_address())
+        else:
             #IOTMQ issues commands via RestAPI, and listens on MQTT for status updates         
             self.iotmq.send_command(action, self._vacuum_address())  #IOTMQ devices need the full action for additional parsing
-            
-    def run(self, action):
-            self.send_command(action) 
 
-    def disconnect(self, wait=False):        
+    def run(self, action):
+        _LOGGER.debug("ACTION: ")
+        _LOGGER.debug(vars(action))
+        self.send_command(action)
+
+    def disconnect(self, wait=False):
         if not self.vacuum['iotmq']:
             self.xmpp.disconnect(wait=wait)
         else:
@@ -727,13 +764,19 @@ class EcoVacsIOTMQ(ClientMQTT):
             return False
 
     def send_command(self, action, recipient):
-        if action.name == "Clean": #For handling Clean when action not specified (i.e. CLI)
-            action.args['clean']['act'] = CLEAN_ACTION_TO_ECOVACS['start'] #Inject a start action
-        c = self._wrap_command(action, recipient)
+        if action.name == "Clean" and 'act' not in action.args['clean']:    #For handling Clean when action not specified (i.e. CLI)
+            action.args['clean']['act'] = CLEAN_ACTION_TO_ECOVACS['start']  #Inject a start action
+
+        if action.is_td_command:
+            c = self._wrap_td_command(action, recipient)
+        else:
+            c = self._wrap_command(action, recipient)
+
         _LOGGER.debug('Sending command {0}'.format(c))
-        self._handle_ctl_api(action, 
-            self.__call_iotdevmanager_api(c ,verify_ssl=self.verify_ssl )
-            )
+        self._handle_ctl_api(
+            action,
+            self.__call_ecovacs_device_api(c, base_url=action.api_base_url, verify_ssl=self.verify_ssl))
+
         
     def _wrap_command(self, cmd, recipient):
         #Remove the td from ctl xml for RestAPI
@@ -756,15 +799,29 @@ class EcoVacsIOTMQ(ClientMQTT):
             "toId": recipient,
             "toRes": self.vacuum['resource'],
             "toType": self.vacuum['class']
-        }     
+        }
 
-    def __call_iotdevmanager_api(self, args, verify_ssl=True):
+    def _wrap_td_command(self, cmd, recipient):
+
+        return {
+            'auth': {
+                'realm': EcoVacsAPI.REALM,
+                'resource': self.resource,
+                'token': self.secret,
+                'userid': self.user,
+                'with': 'users',
+            },
+            "td": cmd.name,
+            "did": recipient,
+            "resource": self.vacuum['resource']
+        }
+
+    def __call_ecovacs_device_api(self, args, base_url=EcoVacsAPI.IOTDEVMANAGERAPI, verify_ssl=True):
         _LOGGER.debug("calling iotdevmanager api with {}".format(args))                
         params = {}
         params.update(args)
 
-        url = (EcoVacsAPI.PORTAL_URL_FORMAT + "/iot/devmanager.do").format(continent=self.continent)
-        response = None        
+        url = (EcoVacsAPI.PORTAL_URL_FORMAT + "/" + base_url).format(continent=self.continent)
         try: #The RestAPI sometimes doesnt provide a response depending on command, reduce timeout to 3 to accomodate and make requests faster
             response = requests.post(url, json=params, timeout=3, verify=verify_ssl) #May think about having timeout as an arg that could be provided in the future
         except requests.exceptions.ReadTimeout:
@@ -789,7 +846,13 @@ class EcoVacsIOTMQ(ClientMQTT):
 
     def _handle_ctl_api(self, action, message):
         if not message == {}:
-            resp = self._ctl_to_dict_api(action, message['resp'])
+            if 'resp' in message:
+                resp = self._ctl_to_dict_api(action, message['resp'])
+            else:
+                resp = {
+                    'event': re.sub('([A-Z]{1})', r'_\1', action.name.replace("Get","",1)).strip('_').lower(),
+                    'data': message
+                }
             if resp is not None:
                 for s in self.ctl_subscribers:
                     s(resp)                    
@@ -990,6 +1053,8 @@ class VacBotCommand:
             args = {}
         self.name = name
         self.args = args
+        self.is_td_command = False
+        self.api_base_url = EcoVacsAPI.IOTDEVMANAGERAPI
 
     def to_xml(self):
         ctl = ET.Element('ctl', {'td': self.name})
@@ -1021,11 +1086,27 @@ class VacBotCommand:
             rtnobject.set(tag, conv_object)
         return rtnobject
 
+class VacBotCommandTD(VacBotCommand):
+    def __init__(self, name, args=None, **kwargs):
+        if args is None:
+            args = {}
+        self.name = name
+        self.args = args
+        super().__init__(name, args)
+        self.is_td_command = True
+        self.api_base_url = EcoVacsAPI.LGLOGAPI
+
 class Clean(VacBotCommand):
-    def __init__(self, mode='auto', speed='normal', iotmq=False, action='start',terminal=False, **kwargs):
+    def __init__(self, mode='auto', speed='normal', iotmq=False, action='start', terminal=False, **kwargs):
         if kwargs == {}:
             #Looks like action is needed for some bots, shouldn't affect older models
-            super().__init__('Clean', {'clean': {'type': CLEAN_MODE_TO_ECOVACS[mode], 'speed': FAN_SPEED_TO_ECOVACS[speed],'act': CLEAN_ACTION_TO_ECOVACS[action]}})
+            super().__init__('Clean', {
+                'clean': {
+                    'type': CLEAN_MODE_TO_ECOVACS[mode],
+                    'speed': ecovacs_fan_speed(speed),
+                    'act': CLEAN_ACTION_TO_ECOVACS[action]
+                }
+            })
         else:
             initcmd = {'type': CLEAN_MODE_TO_ECOVACS[mode], 'speed': FAN_SPEED_TO_ECOVACS[speed]}
             for kkey, kvalue in kwargs.items():
@@ -1047,11 +1128,11 @@ class Stop(Clean):
         super().__init__('stop', 'normal')
 
 class SpotArea(Clean):
-    def __init__(self, action='start', area='', map_position='', cleanings='1'):
+    def __init__(self, action='start', speed='normal', area='', map_position='', cleanings='1'):
         if area != '': #For cleaning specified area
-            super().__init__('spot_area', 'normal', act=CLEAN_ACTION_TO_ECOVACS[action], mid=area)
+            super().__init__('spot_area', speed, act=action, mid=area)
         elif map_position != '': #For cleaning custom map area, and specify deep amount 1x/2x
-            super().__init__('spot_area' ,'normal',act=CLEAN_ACTION_TO_ECOVACS[action], p=map_position, deep=cleanings)
+            super().__init__('spot_area', speed, act=action, p=map_position, deep=cleanings)
         else:
             #no valid entries
             raise ValueError("must provide area or map_position for spotarea clean")
@@ -1080,6 +1161,10 @@ class GetChargeState(VacBotCommand):
     def __init__(self):
         super().__init__('GetChargeState')
 
+class GetChargerPos(VacBotCommand):
+    def __init__(self):
+        super().__init__('GetChargerPos')
+
 
 class GetBatteryState(VacBotCommand):
     def __init__(self):
@@ -1094,3 +1179,18 @@ class GetLifeSpan(VacBotCommand):
 class SetTime(VacBotCommand):
     def __init__(self, timestamp, timezone):
         super().__init__('SetTime', {'time': {'t': timestamp, 'tz': timezone}})
+
+
+class SetCleanSpeed(VacBotCommand):
+    def __init__(self, speed):
+        super().__init__('SetCleanSpeed', {'speed': FAN_SPEED_TO_ECOVACS[speed]})
+
+
+class SetWaterLevel(VacBotCommand):
+    def __init__(self, level):
+        super().__init__('SetWaterPermeability', {'v': WATER_LEVEL_TO_ECOVACS[level]})
+
+
+class GetCleanLogs(VacBotCommandTD):
+    def __init__(self):
+        super().__init__('GetCleanLogs')
