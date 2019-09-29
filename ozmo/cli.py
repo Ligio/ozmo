@@ -225,6 +225,10 @@ def stop():
 def set_speed(speed):
     return CliAction(SetCleanSpeed(speed), terminal=True, wait=EmptyWait())
 
+@cli.command(help='get fan speed')
+def get_clean_speed():
+    return CliAction(GetCleanSpeed(), terminal=True, wait=EmptyWait())
+
 @cli.command(help='set water level')
 @click.argument('level', type=click.STRING, required=True)
 def set_water_level(level):

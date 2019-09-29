@@ -425,6 +425,7 @@ class VacBot():
         self.batteryEvents = EventEmitter()
         self.lifespanEvents = EventEmitter()
         self.errorEvents = EventEmitter()
+        self.fanEvents = EventEmitter()
 
         #Set none for clients to start        
         self.xmpp = None
@@ -574,6 +575,13 @@ class VacBot():
 
             self.clean_logs = event['data']['logs']
 
+    def _handle_clean_speed(self, event):
+        if 'speed' in event:
+            _LOGGER.debug("Handle get clean speed: " + str(event))
+
+            self.fan_speed = FAN_SPEED_FROM_ECOVACS[event['speed']]
+            self.fanEvents.notify(self.fan_speed)
+
     def _vacuum_address(self):
         if not self.vacuum['iotmq']:
             return self.vacuum['did'] + '@' + self.vacuum['class'] + '.ecorobot.net/atom'
@@ -643,6 +651,12 @@ class VacBot():
             _LOGGER.warning("Initial status requests failed to reach VacBot. Will try again on next ping.")
             _LOGGER.debug("*** Error type: " + err.etype)
             _LOGGER.debug("*** Error condition: " + err.condition)
+
+        try:
+            # some vacuum doesn't support custom fan speed
+            self.run(GetCleanSpeed())
+        except:
+            pass
 
     def request_all_statuses(self):
         self.refresh_statuses()
@@ -1184,6 +1198,9 @@ class SetCleanSpeed(VacBotCommand):
     def __init__(self, speed):
         super().__init__('SetCleanSpeed', {'speed': FAN_SPEED_TO_ECOVACS[speed]})
 
+class GetCleanSpeed(VacBotCommand):
+    def __init__(self):
+        super().__init__('GetCleanSpeed')
 
 class SetWaterLevel(VacBotCommand):
     def __init__(self, level):
@@ -1193,3 +1210,8 @@ class SetWaterLevel(VacBotCommand):
 class GetCleanLogs(VacBotCommandTD):
     def __init__(self):
         super().__init__('GetCleanLogs')
+
+"""
+GetWaterBoxInfo
+{"ret":"ok","resp":"<ctl ret='ok' on='1'/>","id":"MDgD"}
+"""
