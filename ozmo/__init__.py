@@ -873,7 +873,7 @@ class EcoVacsIOTMQ(ClientMQTT):
     def _ctl_to_dict_api(self, action, xmlstring):
         xml = ET.fromstring(xmlstring)
     
-        xmlchild = xml.getchildren()
+        xmlchild = list(xml)
         if len(xmlchild) > 0:
             result = xmlchild[0].attrib.copy()
             #Fix for difference in XMPP vs API response
