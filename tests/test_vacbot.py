@@ -29,6 +29,11 @@ def test_handle_clean_report():
     assert_equals('a_type_not_supported_by_ozmo', v.clean_status)
     assert_equals('a_weird_speed', v.fan_speed)
 
+    # Set a fake type when the vacuum didn't return the type property
+    v._handle_ctl({'event': 'clean_report', 'speed': 'a_weird_speed'})
+    assert_equals('no_type_found', v.clean_status)
+    assert_equals('a_weird_speed', v.fan_speed)
+
 
              
 def test_not_iot_send_command_clean():
