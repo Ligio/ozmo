@@ -15,7 +15,7 @@ like
 ```
 % python3 -m virtualenv env
 % source env/bin/activate
-% pip install -e .[dev]
+% pip install -e ".[dev]"
 % nosetests
 ```
 

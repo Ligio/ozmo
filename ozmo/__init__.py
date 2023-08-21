@@ -497,7 +497,7 @@ class VacBot():
         _LOGGER.debug("*** life_span " + type + " = " + str(lifespan))
 
     def _handle_clean_report(self, event):
-        type = event['type']
+        type = event.get('type', 'no_type_found')
         try:
             type = CLEAN_MODE_FROM_ECOVACS[type]
             if self.vacuum['iotmq']: #Was able to parse additional status from the IOTMQ, may apply to XMPP too
