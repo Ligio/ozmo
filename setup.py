@@ -15,7 +15,7 @@ except FileNotFoundError:
 
 setup(
     name='ozmo',
-    version='1.0.4',
+    version='1.0.5',
 
     description='a library for controlling certain robot vacuums',
     long_description=long_description,

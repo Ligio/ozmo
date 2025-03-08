@@ -689,11 +689,15 @@ def RepresentsInt(stringvar):
 
 class EcoVacsIOTMQ(ClientMQTT):
     def __init__(self, user, domain, resource, secret, continent, vacuum, server_address=None, verify_ssl=True):
-        ClientMQTT.__init__(self)
         self.ctl_subscribers = []        
         self.user = user
         self.domain = str(domain).split(".")[0] #MQTT is using domain without tld extension
         self.resource = resource
+        
+        # Initialize the base class now
+        _client_id = self.user + '@' + self.domain.split(".")[0] + '/' + self.resource
+        super().__init__(client_id=_client_id)
+        
         self.secret = secret
         self.continent = continent
         self.vacuum = vacuum
@@ -713,10 +717,10 @@ class EcoVacsIOTMQ(ClientMQTT):
                 else:
                     self.port = 8883                    
 
-        self._client_id = self.user + '@' + self.domain.split(".")[0] + '/' + self.resource        
         self.username_pw_set(self.user + '@' + self.domain, secret)
 
         self.ready_flag = Event()
+
 
     def connect_and_wait_until_ready(self):        
         #self._on_log = self.on_log #This provides more logging than needed, even for debug
