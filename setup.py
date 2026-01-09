@@ -24,7 +24,6 @@ setup(
 
     # Author details
     author='Marco',
-    author_email='ligioxx@gmail.com',
 
     # Choose your license
     license='GPL-3.0',
